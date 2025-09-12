@@ -16,7 +16,8 @@ const ApplicationsPage = () => {
       
       try {
         const data = await getApplications();
-        setApplications(data);
+        // Ensure data is an array
+        setApplications(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Error fetching applications:', err);
         setError('Failed to load your applications. Please try again later.');
@@ -63,15 +64,15 @@ const ApplicationsPage = () => {
         <div className="bg-red-50 p-4 rounded-md text-red-700">
           {error}
         </div>
-      ) : applications.length === 0 ? (
+      ) : !applications || applications.length === 0 ? (
         <div className="bg-blue-50 p-6 rounded-md text-blue-700 text-center">
           <h3 className="text-xl font-semibold mb-2">No applications yet</h3>
           <p>When you apply for jobs, they will appear here.</p>
         </div>
       ) : (
         <div className="space-y-6">
-          {applications.map((app) => (
-            <div key={app.id} className="card border-l-4 border-primary">
+          {applications.map((app, index) => (
+            <div key={app.job_id || index} className="card border-l-4 border-primary">
               <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                 <div>
                   <h3 className="text-xl font-bold text-gray-800">{app.job_title}</h3>
@@ -79,7 +80,7 @@ const ApplicationsPage = () => {
                 </div>
                 <div className="mt-4 md:mt-0">
                   <span className="text-gray-500">
-                    Applied on {formatDate(app.applied_at)}
+                    Applied on {formatDate(app.appliedDate)}
                   </span>
                 </div>
               </div>
@@ -88,7 +89,7 @@ const ApplicationsPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="text-sm font-medium text-gray-500">Applicant</h4>
-                    <p className="mt-1">{app.name}</p>
+                    <p className="mt-1">{app.applicant}</p>
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-gray-500">Email</h4>
@@ -98,12 +99,12 @@ const ApplicationsPage = () => {
                 
                 <div className="mt-4">
                   <h4 className="text-sm font-medium text-gray-500">Resume</h4>
-                  <p className="mt-1">{app.resume_filename}</p>
+                  <p className="mt-1">{app.resume}</p>
                 </div>
                 
                 <div className="mt-4">
                   <h4 className="text-sm font-medium text-gray-500">Cover Letter</h4>
-                  <p className="mt-1 text-gray-700 whitespace-pre-line">{app.cover_letter}</p>
+                  <p className="mt-1 text-gray-700 whitespace-pre-line">{app.coverLetter}</p>
                 </div>
               </div>
             </div>

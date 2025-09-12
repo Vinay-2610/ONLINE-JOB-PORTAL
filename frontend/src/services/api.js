@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000';
+// Use relative URLs in production and localhost in development
+const API_URL = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8000';
 
 // Create axios instance with base URL
 const apiClient = axios.create({
@@ -55,7 +56,9 @@ export const submitApplication = async (formData) => {
 export const getApplications = async () => {
   try {
     const response = await apiClient.get('/applications');
-    return response.data;
+    // Backend now returns { status, count, data } structure
+    // Extract the data array from the response
+    return response.data.data || [];
   } catch (error) {
     console.error('Error fetching applications:', error);
     throw error;
