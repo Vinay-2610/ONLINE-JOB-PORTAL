@@ -15,7 +15,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           <Link to="/" className="text-2xl font-bold text-primary">
-            Job Portal
+            Check-It
           </Link>
           
           <div className="flex items-center space-x-6">
