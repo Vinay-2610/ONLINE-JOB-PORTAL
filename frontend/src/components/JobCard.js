@@ -44,11 +44,6 @@ const JobCard = ({ job }) => {
   const [expanded, setExpanded] = useState(false);
   console.log("Rendering job:", job);
 
-  // Determine which API format we're working with
-  const isJSearch = job.job_id || job.job_title || job.employer_name;
-  const isRemotive = job.company_name || job.candidate_required_location;
-  const isFindWork = job.role || job.text;
-  
   // Extract common fields from different API formats
   const jobId = job.job_id || job.id || `job-${Math.random().toString(36).substring(2, 9)}`;
   const jobTitle = job.job_title || job.title || job.role || "Untitled Position";
