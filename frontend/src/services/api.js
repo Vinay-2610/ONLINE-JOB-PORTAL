@@ -120,3 +120,36 @@ export const getUserProfile = async () => {
     throw error;
   }
 };
+
+// Chatbot API
+export const sendChatMessage = async (message) => {
+  try {
+    const response = await apiClient.post('/chatbot', { message });
+    return response.data;
+  } catch (error) {
+    console.error('Error sending chat message:', error);
+    
+    // Handle specific API overload scenarios with fallback responses
+    if (error.response?.status === 503 || 
+        error.message?.includes('503') || 
+        error.message?.includes('busy') || 
+        error.message?.includes('overload')) {
+      return {
+        status: 'success',
+        message: "🤖 I'm currently experiencing high traffic! Here's a quick career tip: Focus on building skills in high-demand areas like cloud computing, AI/ML, web development, and data science. Tech companies like Google, Microsoft, Amazon are actively hiring for these roles! Check job boards like LinkedIn, Indeed, and AngelList.",
+        timestamp: new Date().toISOString()
+      };
+    }
+    
+    // For other errors, provide a generic helpful response
+    if (error.response?.status === 500) {
+      return {
+        status: 'success',
+        message: "💼 While I'm temporarily unavailable, here are some job search tips: 1) Tailor your resume for each application, 2) Network actively on LinkedIn, 3) Prepare for technical interviews, 4) Keep learning new skills, 5) Follow up on applications professionally.",
+        timestamp: new Date().toISOString()
+      };
+    }
+    
+    throw error;
+  }
+};

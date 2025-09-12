@@ -1,6 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import SearchResultsPage from './pages/SearchResultsPage';
@@ -10,6 +10,24 @@ import Login from './components/Login';
 import Register from './components/Register';
 import ProtectedRoute from './components/ProtectedRoute';
 import Footer from './components/Footer';
+import ChatbotButton from './components/ChatbotButton';
+
+// Component to conditionally render chatbot
+function ConditionalChatbot() {
+  const location = useLocation();
+  const { user } = useAuth();
+  
+  // Don't show chatbot on login and register pages
+  const hideOnPaths = ['/login', '/register'];
+  const shouldHideChatbot = hideOnPaths.includes(location.pathname);
+  
+  // Only show chatbot if user is authenticated and not on auth pages
+  if (shouldHideChatbot || !user) {
+    return null;
+  }
+  
+  return <ChatbotButton />;
+}
 
 function App() {
   return (
@@ -44,6 +62,9 @@ function App() {
             </Routes>
           </main>
           <Footer />
+          
+          {/* Chatbot only on authenticated pages, not on login/register */}
+          <ConditionalChatbot />
         </div>
       </Router>
     </AuthProvider>

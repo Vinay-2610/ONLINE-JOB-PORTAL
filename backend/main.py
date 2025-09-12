@@ -48,6 +48,11 @@ except Exception as e:
 # ✅ RapidAPI Key
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
 
+# ✅ Gemini API Key for Chatbot
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+print("DEBUG GEMINI_API_KEY:", "Loaded" if GEMINI_API_KEY else "Not found")
+print("Raw GEMINI_API_KEY from env:", repr(GEMINI_API_KEY))
+
 # ---------------- ROUTES ----------------
 
 @app.route("/")
@@ -415,6 +420,122 @@ def seed_sample_data():
         return jsonify({"error": str(e)}), 500
 
 
+# ============ CHATBOT ROUTE ============
+
+@app.route("/chatbot", methods=["POST"])
+def chatbot():
+    try:
+        data = request.get_json()
+        user_message = data.get('message', '').strip()
+        
+        if not user_message:
+            return jsonify({"error": "Message is required"}), 400
+            
+        if not GEMINI_API_KEY:
+            return jsonify({"error": "Gemini API key not configured"}), 500
+            
+        # Prepare context for job portal chatbot
+        system_context = """You are SkillMate Assistant, an expert career and job search advisor for a professional job portal. 
+        
+        Your expertise includes:
+        - Current job market trends in IT, healthcare, finance, marketing, and other sectors
+        - Top companies actively hiring (Google, Microsoft, Amazon, startups, etc.)
+        - In-demand skills for different roles (Python, React, AI/ML, cloud computing, etc.)
+        - Salary ranges and career progression paths
+        - Interview preparation and common questions
+        - Resume optimization and LinkedIn tips
+        - Networking strategies and job search techniques
+        
+        IMPORTANT GUIDELINES:
+        - Give specific, actionable advice with real examples
+        - Mention actual companies and technologies when relevant
+        - Include salary ranges when discussing roles
+        - Suggest concrete next steps the user can take
+        - Keep responses focused, practical, and encouraging
+        - If asked about job openings, direct them to use the portal's search feature
+        
+        Always provide valuable, career-focused insights that help users advance their professional goals."""
+        
+        # Create the prompt with context
+        full_prompt = f"{system_context}\n\nUser Question: {user_message}\n\nResponse:"
+        
+        # Call Gemini API
+        gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        
+        payload = {
+            "contents": [{
+                "parts": [{
+                    "text": full_prompt
+                }]
+            }],
+            "generationConfig": {
+                "temperature": 0.7,
+                "topK": 1,
+                "topP": 1,
+                "maxOutputTokens": 500,
+                "stopSequences": []
+            },
+            "safetySettings": [
+                {
+                    "category": "HARM_CATEGORY_HARASSMENT",
+                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                    "category": "HARM_CATEGORY_HATE_SPEECH", 
+                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                }
+            ]
+        }
+        
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.post(gemini_url, json=payload, headers=headers, timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            
+            # Extract the generated text
+            if 'candidates' in result and len(result['candidates']) > 0:
+                generated_text = result['candidates'][0]['content']['parts'][0]['text']
+                
+                return jsonify({
+                    "status": "success",
+                    "message": generated_text.strip(),
+                    "timestamp": datetime.utcnow().isoformat()
+                }), 200
+            else:
+                return jsonify({"error": "No response generated from AI"}), 500
+        elif response.status_code == 503:
+            return jsonify({
+                "status": "error", 
+                "message": "The AI service is currently busy. Here are some general career tips: Focus on building in-demand skills like Python, JavaScript, cloud computing, and data analysis. Companies like Google, Microsoft, Amazon, and startups are actively hiring. Consider improving your LinkedIn profile and GitHub portfolio.",
+                "timestamp": datetime.utcnow().isoformat()
+            }), 200
+        else:
+            error_data = response.json() if response.content else {"error": "Unknown error"}
+            return jsonify({
+                "error": f"AI service temporarily unavailable (Error {response.status_code}). Please try again in a few moments.",
+                "details": error_data
+            }), 500
+            
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "AI service timeout. Please try again."}), 504
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Network error: {str(e)}"}), 503
+    except Exception as e:
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
+
 # ✅ Health check endpoint
 @app.route("/health", methods=["GET"])
 def health_check():
@@ -439,4 +560,4 @@ def health_check():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="127.0.0.1", port=8000, debug=True, threaded=True)
