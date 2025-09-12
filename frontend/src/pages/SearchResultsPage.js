@@ -27,23 +27,19 @@ const SearchResultsPage = () => {
       
       // Handle different API response formats
       let jobsData = [];
-      let total = 0;
       
       if (data.data && Array.isArray(data.data)) {
         // JSearch API format or similar
         console.log("Using JSearch format, found", data.data.length, "jobs");
         jobsData = data.data;
-        total = data.data.length;
       } else if (data.jobs && Array.isArray(data.jobs)) {
         // Remotive API format
         console.log("Using Remotive format, found", data.jobs.length, "jobs");
         jobsData = data.jobs;
-        total = data.jobs.length;
       } else if (data.results && Array.isArray(data.results)) {
         // FindWork API format
         console.log("Using FindWork format, found", data.results.length, "jobs");
         jobsData = data.results;
-        total = data.results.length;
       } else if (data.error) {
         // Error from API
         console.error("API returned error:", data.error);
@@ -56,7 +52,6 @@ const SearchResultsPage = () => {
       
       // If this is page 1, replace all jobs, otherwise append
       setJobs(prevJobs => pageNum === 1 ? jobsData : [...prevJobs, ...jobsData]);
-      setTotalResults(total);
     } catch (err) {
       console.error('Error fetching jobs:', err);
       setError('Failed to fetch jobs. Please try again later.');
